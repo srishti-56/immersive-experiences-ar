@@ -1,18 +1,17 @@
 <template>
-  <script
-    type="application/javascript"
-    src="https://aframe.io/releases/0.7.1/aframe.min.js"
-  ></script>
-  <script
-    type="application/javascript"
-    src="https://rawgit.com/chenzlabs/aframe-ar/827e9db/dist/aframe-ar.min.js"
-  ></script>
-  <script
-    type="application/javascript"
-    src="https://google-ar.github.io/three.ar.js/dist/three.ar.js"
-  ></script>
-
   <div class="content-container">
+    <script
+      type="application/javascript"
+      src="https://aframe.io/releases/0.7.1/aframe.min.js"
+    ></script>
+    <script
+      type="application/javascript"
+      src="https://rawgit.com/chenzlabs/aframe-ar/827e9db/dist/aframe-ar.min.js"
+    ></script>
+    <script
+      type="application/javascript"
+      src="https://google-ar.github.io/three.ar.js/dist/three.ar.js"
+    ></script>
     <div class="content-title-group not-found">
       <h2 class="title">View your Mood Board in AR</h2>
       <p>This page will display a default Mood Board.</p>
