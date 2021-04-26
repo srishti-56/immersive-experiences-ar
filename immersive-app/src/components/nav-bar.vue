@@ -5,6 +5,7 @@
       <router-link to="/products">Products</router-link>
       <router-link to="/about">About</router-link>
       <router-link to="/mood">Mood Board</router-link>
+      <router-link to="/demo">Demo Aframe Scene</router-link>
     </ul>
   </nav>
 </template>

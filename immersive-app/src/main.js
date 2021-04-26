@@ -4,6 +4,16 @@ import router from './router';
 import store from './store';
 
 Vue.config.productionTip = false;
+Vue.config.ignoredElements = [
+  'a-scene',
+  'a-entity',
+  'a-camera',
+  'a-box',
+  'a-sphere',
+  'a-cylinder',
+  'a-plane',
+  'a-sky',
+];
 
 new Vue({
   router,
