@@ -30,6 +30,18 @@ export default new Router({
         import(/* webpackChunkName: "about" */ './views/about.vue'),
     },
     {
+      path: '/mood',
+      name: 'mood',
+      component: () =>
+        import(/* webpackChunkName: "about" */ './views/mood.vue'),
+    },
+    {
+      path: '/demo',
+      name: 'demo',
+      component: () =>
+        import(/* webpackChunkName: "about" */ './views/demo.vue'),
+    },
+    {
       path: '*',
       component: PageNotFound,
     },
