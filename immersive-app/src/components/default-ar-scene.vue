@@ -2,7 +2,7 @@
   <a-scene embedded arjs>
     <a-camera></a-camera>
     <a-text
-      value="{Name}'s Mood Board!"
+      :value="Name + ' Mood Board'"
       color="#111"
       position="0 2.5 -2"
       align="center"
@@ -46,5 +46,9 @@ import 'aframe-ar';
 
 export default {
   name: 'DefaultArScene',
+  props: ['Name'],
+  created() {
+    console.log('created:', this.Name);
+  },
 };
 </script>

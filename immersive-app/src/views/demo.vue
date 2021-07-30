@@ -32,5 +32,10 @@ export default {
   components: {
     DefaultArScene,
   },
+  data() {
+    return {
+      Name: 'User',
+    };
+  },
 };
 </script>
