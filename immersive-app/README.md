@@ -1,1 +1,0 @@
-Front-end Vue App with Three.js for Augmented Reality experiences
