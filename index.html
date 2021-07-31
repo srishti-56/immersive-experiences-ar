@@ -125,7 +125,7 @@
                         enterXRButton.background = "green";
                         enterXRButton.isVisible = true;
 
-                        
+
                         // Capture state change of User in WebXR/Normal mode and toggle button visibility
                         xr.baseExperience.onStateChangedObservable.add((state) => {
                             if (state === BABYLON.WebXRState.ENTERING_XR) {
@@ -160,14 +160,19 @@
                         });
 
                         // Add more XR stuff
-
-                        // Add a box only in XR (not working)
+                        // Add a box in XR (when pointing the phone)
                         const box = BABYLON.MeshBuilder.CreateBox("box", {});
                         box.isVisible = false;
-                        hitTest.onHitTestResultObservable.add(() => {
-                            box.isVisible = true;
-                        });
 
+                        hitTest.onHitTestResultObservable.add((results) => {
+                            if (results.length) {
+                                box.isVisible = true;
+                                results[0].transformationMatrix.decompose(box.scaling, box.rotationQuaternion, box.position);
+                            } else {
+                                box.isVisible = false;
+                            }
+                        });
+                        
                         // Add button to UI
                         ui.addControl(enterXRButton);
 
