@@ -1,19 +1,257 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <title>Vanilla JavaScript App</title>
-  <script src="https://cdn.babylonjs.com/viewer/babylon.viewer.js"></script>
-</head>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html" charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hello World AR Babylon</title>
 
-<body>
-  <main>
-    <h1>Vanilla JavaScript App</h1>
-  </main>
-  <babylon model="https://assets.babylonjs.com/meshes/box.glb"></babylon>
-</body>
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src='https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js'></script>
+
+
+        <!-- 
+        <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+        <script src="./js/lib/babylon.js"></script>
+        <script src="./js/lib/babylon.gui.min.js"></script>
+        <script src="./js/lib/webxr-polyfill.js"></script>
+        <link rel="stylesheet" href="./css/styles.css" />
+        -->
+
+    </head>
+
+   <body>
+
+    <canvas id="renderCanvas"></canvas> <!-- touch-action="none" for best results from PEP -->
+
+    <div class="container">
+        <h3 id="info-message"></h3>
+    </div>
+
+    <script>
+
+        // Wait for DOM to load
+    window.addEventListener("DOMContentLoaded", function () {
+        // navigator.xr: The XRSystem object used to interface with the WebXR Device API in the current context. This can be used to present augmented and/or virtual reality imagery to the user.
+        if (navigator.xr) {
+            // Check for AR support
+            navigator.xr.isSessionSupported("immersive-ar").then(async (supported) => {
+                if (supported) {
+                    document.getElementById("renderCanvas").style.display = "block";
+                    document.getElementById("info-message").style.display = "none";
+
+                    // Create Babylon on canvas
+                    var canvas = document.getElementById("renderCanvas");
+                    var engine = new BABYLON.Engine(canvas, true);
+
+                    // Create scene with Fullscreen UI, FreeCamera, Light, Button, 
+                    // WebXR experience with hit-test/background-removal/anchor features
+                    // A button click listener to enter the XR experience
+                    var createScene = async function () {
+                        var scene = new BABYLON.Scene(engine);
+                        var camera = new BABYLON.FreeCamera(
+                            "myCamera",
+                            new BABYLON.Vector3(0, 1, -5),
+                            scene
+                        );
+
+                        // Set Babylon UI fullscreen, will intercept clicks/touches, will rescale to adapt to rendering resolution
+                        // Note: Docs mention - The fullscreen mode is not intended to be used with WebVR as it is a pure 2d rendering. For WebVR scenario you will have to use the texture mode (BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh)
+                        var ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI(
+                            "myUI"
+                        );
+
+                        // By default the hardware scaling level is computed from the window device ratio.
+                        // if level = 1 then the engine will render at the exact resolution of the canvas. If level = 0.5 then the engine will render at twice the size of the canvas.
+                        var renderScale = 1.0;
+                        var hardwareScalingLevel = 0.5;
+
+                        engine.setHardwareScalingLevel(hardwareScalingLevel);
+                        ui.renderScale = renderScale;
+
+                        // Attach camera to canvas
+                        camera.setTarget(BABYLON.Vector3.Zero());
+                        camera.attachControl(canvas, true);
+
+                        // Set the light compoennt
+                        var light = new BABYLON.HemisphericLight(
+                            "light",
+                            new BABYLON.Vector3(0, 5, 0),
+                            scene
+                        );
+                        light.diffuse = BABYLON.Color3.White();
+                        light.intensity = 0.1;
+                        light.specular = new BABYLON.Color3(0, 0, 0);
+
+                        //  Create the WebXR scene experience
+                        var xr = await scene.createDefaultXRExperienceAsync({
+                            optionalFeatures: true,
+                            disableDefaultUI: true,
+                        });
+
+
+                        // Create a button to Enter the AR/XR Experience
+                        var enterXRButton = BABYLON.GUI.Button.CreateSimpleButton(
+                            "enterXRButton",
+                            "Enter"
+                        );
+                        enterXRButton.width = `${
+                            (300 * renderScale) / hardwareScalingLevel
+                        }px`;
+                        enterXRButton.height = `${
+                            (50 * renderScale) / hardwareScalingLevel
+                        }px`;
+                        enterXRButton.color = "white";
+                        enterXRButton.fontSize = (28 * renderScale) / hardwareScalingLevel;
+                        enterXRButton.background = "green";
+                        enterXRButton.isVisible = true;
+
+                        
+                        // Capture state change of User in WebXR/Normal mode and toggle button visibility
+                        xr.baseExperience.onStateChangedObservable.add((state) => {
+                            if (state === BABYLON.WebXRState.ENTERING_XR) {
+                            // console.log("Camera position before: " + camera.globalPosition);
+                            } else if (state === BABYLON.WebXRState.IN_XR) {
+                            // console.log("Camera position after: " + xr.baseExperience.camera.globalPosition);
+                            enterXRButton.isVisible = false;
+                            } else if (state === 3) {
+                            console.log(state);
+                            enterXRButton.isVisible = true;
+                            }
+                        });
+
+                        
+                        // Enable background removal, hit-test, anchor features in the AR Experience
+                        const fm = xr.baseExperience.featuresManager;
+                        // console.log(fm.GetAvailableFeatures())
+                        fm.enableFeature(BABYLON.WebXRBackgroundRemover);
+                        const hitTest = fm.enableFeature(BABYLON.WebXRHitTest, "latest");
+                        const anchorSystem = fm.enableFeature(
+                            BABYLON.WebXRAnchorSystem,
+                            "latest"
+                        );
+
+                        // Enter the XR/AR Experience on button click
+                        enterXRButton.onPointerUpObservable.add(async function () {
+                            const session = await xr.baseExperience.enterXRAsync(
+                            "immersive-ar",
+                            "unbounded",
+                            xr.renderTarget
+                            );
+                        });
+
+                        // Add more XR stuff
+
+                        // Add a box only in XR (not working)
+                        const box = BABYLON.MeshBuilder.CreateBox("box", {});
+                        box.isVisible = false;
+                        hitTest.onHitTestResultObservable.add(() => {
+                            box.isVisible = true;
+                        });
+
+                        // Add button to UI
+                        ui.addControl(enterXRButton);
+
+                        return scene;
+
+                    }; // close createScene
+
+                    var scene = await createScene();
+
+                    engine.runRenderLoop(function () 
+                    {
+                        scene.render();
+                    });
+
+                    window.addEventListener("resize", function () 
+                    {
+                        engine.resize();
+                    });
+
+                }
+                else
+                {
+                    document.getElementById("renderCanvas").style.display = "none";
+                    document.getElementById("info-message").style.display = "block";
+                    document.getElementById("info-message").innerText =
+                    "Unfortunately your device doesn't support Immersive AR of WebXR";
+                }
+            }); // close navigator.xr.isSessionSupported
+        }
+        else
+        {
+            document.getElementById("renderCanvas").style.display = "none";
+            document.getElementById("info-message").style.display = "block";
+            document.getElementById("info-message").innerText =
+            "Unfortunately your device doesn't support WebXR";
+        }
+    }); // close top-level: window.addEventListener
+
+        /*
+    window.addEventListener("DOMContentLoaded", async function () {
+        const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+        const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
+        // Add your code here matching the playground format
+        var createScene = async function () {
+            const scene = new BABYLON.Scene(engine);
+
+            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+            camera.attachControl(canvas, true);
+
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0));
+
+            const box = BABYLON.MeshBuilder.CreateBox("box", {});
+
+            
+            const xrHelper = await scene.createDefaultXRExperienceAsync();
+            if (!xrHelper.baseExperience)
+            {
+            // XR support is unavailable.
+            console.log('WebXR support is unavailable');
+            } else 
+            {
+            // XR support is available; proceed.
+            return scene;
+            }
+            
+        }
+
+        var scene = await createScene();
+
+        // run the render loop
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        // Watch for browser/canvas resize events
+        window.addEventListener("resize", function () {
+                engine.resize();
+        });
+    });
+    */
+    </script>
+
+   </body>
 
 </html>
