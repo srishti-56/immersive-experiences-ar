@@ -50,7 +50,7 @@
 
     <script>
 
-        // Wait for DOM to load
+    // Wait for DOM to load
     window.addEventListener("DOMContentLoaded", function () {
         // navigator.xr: The XRSystem object used to interface with the WebXR Device API in the current context. This can be used to present augmented and/or virtual reality imagery to the user.
         if (navigator.xr) {
@@ -69,11 +69,17 @@
                     // A button click listener to enter the XR experience
                     var createScene = async function () {
                         var scene = new BABYLON.Scene(engine);
-                        var camera = new BABYLON.FreeCamera(
-                            "myCamera",
-                            new BABYLON.Vector3(0, 1, -5),
-                            scene
-                        );
+
+                        // Old Camera
+                        // var camera = new BABYLON.FreeCamera(
+                        //     "myCamera",
+                        //     new BABYLON.Vector3(0, 1, -5),
+                        //     scene
+                        // );
+
+                        // Camera to allow entity rotation
+                        var camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2,  7 * Math.PI / 16, 5, BABYLON.Vector3.Zero(), scene);
+
 
                         // Set Babylon UI fullscreen, will intercept clicks/touches, will rescale to adapt to rendering resolution
                         // Note: Docs mention - The fullscreen mode is not intended to be used with WebVR as it is a pure 2d rendering. For WebVR scenario you will have to use the texture mode (BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh)
@@ -93,15 +99,16 @@
                         camera.setTarget(BABYLON.Vector3.Zero());
                         camera.attachControl(canvas, true);
 
-                        // Set the light compoennt
+                        //Set the light component
                         var light = new BABYLON.HemisphericLight(
                             "light",
-                            new BABYLON.Vector3(0, 5, 0),
+                            new BABYLON.Vector3(1, 1, 0), // updated from BABYLON.Vector3(0, 5, 0)
                             scene
                         );
                         light.diffuse = BABYLON.Color3.White();
-                        light.intensity = 0.1;
-                        light.specular = new BABYLON.Color3(0, 0, 0);
+                        light.intensity = 2; // updated from 0.1 
+                        // light.specular = new BABYLON.Color3(0, 0, 0);
+
 
                         //  Create the WebXR scene experience
                         var xr = await scene.createDefaultXRExperienceAsync({
@@ -126,20 +133,6 @@
                         enterXRButton.background = "green";
                         enterXRButton.isVisible = true;
 
-
-                        // Capture state change of User in WebXR/Normal mode and toggle button visibility
-                        xr.baseExperience.onStateChangedObservable.add((state) => {
-                            if (state === BABYLON.WebXRState.ENTERING_XR) {
-                            // console.log("Camera position before: " + camera.globalPosition);
-                            } else if (state === BABYLON.WebXRState.IN_XR) {
-                            // console.log("Camera position after: " + xr.baseExperience.camera.globalPosition);
-                            enterXRButton.isVisible = false;
-                            } else if (state === 3) {
-                            console.log(state);
-                            enterXRButton.isVisible = true;
-                            }
-                        });
-
                         
                         // Enable background removal, hit-test, anchor features in the AR Experience
                         const fm = xr.baseExperience.featuresManager;
@@ -161,21 +154,57 @@
                         });
 
                         // Add more XR stuff
-                        // Add a box in XR (when pointing the phone)
-                        const box = BABYLON.MeshBuilder.CreateBox("box", {});
-                        box.isVisible = false;
 
-                        hitTest.onHitTestResultObservable.add((results) => {
-                            if (results.length) {
-                                box.isVisible = true;
-                                results[0].transformationMatrix.decompose(box.scaling, box.rotationQuaternion, box.position);
-                            } else {
-                                box.isVisible = false;
+                        // Add Image Panel
+                        // Add an Entity cylinder
+                        const imageEntity = BABYLON.MeshBuilder.CreateCylinder("imageEntity", {arc: 0.6, sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+
+                        // Add the entity material <paraemterize>
+                        var imageEntityMaterial = new BABYLON.StandardMaterial("material", scene);
+                        imageEntityMaterial.diffuseTexture = new BABYLON.Texture("https://www.unilad.co.uk/wp-content/uploads/2020/04/PA-50403904.jpg", scene)    
+                        
+                        imageEntity.material = imageEntityMaterial;
+
+                        // Add Rotation to Image result
+                        var imageEntityAxis = new BABYLON.Vector3(0, Math.cos(23.4/180 * Math.PI), 0);
+                        var angle = 0.004;
+                        scene.registerBeforeRender(function() {
+                            imageEntity.rotate(imageEntityAxis, angle, BABYLON.Space.WORLD);
+                        })
+
+                        imageEntity.isVisible = false;
+
+                        // Add a box in XR (when pointing the phone)
+                        // const box = BABYLON.MeshBuilder.CreateBox("box", {});
+                        // box.isVisible = false;
+
+                        // hitTest.onHitTestResultObservable.add((results) => {
+                        //     if (results.length) {
+                        //         imageEntity.isVisible = true;
+                        //         results[0].transformationMatrix.decompose(imageEntity.scaling, imageEntity.rotationQuaternion, imageEntity.position);
+                        //     } else {
+                        //         // box.isVisible = false;
+                        //         console.log("Still visible?");
+                        //     }
+                        // });
+                        
+                        // Add button to UIre
+                        ui.addControl(enterXRButton);
+
+                        // Capture state change of User in WebXR/Normal mode and toggle button visibility
+                        xr.baseExperience.onStateChangedObservable.add((state) => {
+                            if (state === BABYLON.WebXRState.ENTERING_XR) {
+                            // console.log("Camera position before: " + camera.globalPosition);
+                            } else if (state === BABYLON.WebXRState.IN_XR) {
+                            // console.log("Camera position after: " + xr.baseExperience.camera.globalPosition);
+                            enterXRButton.isVisible = false;
+                            imageEntity.isVisible = true;
+                            } else if (state === 3) {
+                            console.log(state);
+                            enterXRButton.isVisible = true;
+                            imageEntity.isVisible = false;
                             }
                         });
-                        
-                        // Add button to UI
-                        ui.addControl(enterXRButton);
 
                         return scene;
 
@@ -212,50 +241,6 @@
         }
     }); // close top-level: window.addEventListener
 
-        /*
-    window.addEventListener("DOMContentLoaded", async function () {
-        const canvas = document.getElementById("renderCanvas"); // Get the canvas element
-        const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
-
-        // Add your code here matching the playground format
-        var createScene = async function () {
-            const scene = new BABYLON.Scene(engine);
-
-            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
-            camera.setTarget(BABYLON.Vector3.Zero());
-            camera.attachControl(canvas, true);
-
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0));
-
-            const box = BABYLON.MeshBuilder.CreateBox("box", {});
-
-            
-            const xrHelper = await scene.createDefaultXRExperienceAsync();
-            if (!xrHelper.baseExperience)
-            {
-            // XR support is unavailable.
-            console.log('WebXR support is unavailable');
-            } else 
-            {
-            // XR support is available; proceed.
-            return scene;
-            }
-            
-        }
-
-        var scene = await createScene();
-
-        // run the render loop
-        engine.runRenderLoop(function () {
-            scene.render();
-        });
-
-        // Watch for browser/canvas resize events
-        window.addEventListener("resize", function () {
-                engine.resize();
-        });
-    });
-    */
     </script>
 
    </body>
